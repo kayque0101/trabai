@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Contato com Localização</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-group input:focus {
+            border-color: #007BFF;
+        }
+
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            color: green;
+            display: none;
+        }
+
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Formulário de Contato</h2>
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name">Nome</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Número de Telefone</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="location">Localização</label>
+                <input type="text" id="location" name="location" required readonly>
+            </div>
+            <div class="form-group">
+                <button type="submit">Enviar</button>
+            </div>
+        </form>
+        <div id="map"></div>
+        <div class="message" id="successMessage">
+            Dados enviados com sucesso!
+        </div>
+    </div>
+
+    <script>
+        // Iniciar o mapa
+        let map;
+        let marker;
+
+        function initMap() {
+            const initialPosition = { lat: -23.55052, lng: -46.633308 }; // São Paulo
+
+            // Criar o mapa
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: initialPosition,
+                zoom: 12,
+            });
+
+            // Criar o marcador
+            marker = new google.maps.Marker({
+                position: initialPosition,
+                map: map,
+                draggable: true,
+            });
+
+            // Quando o marcador for movido, atualize o campo de localização
+            google.maps.event.addListener(marker, "dragend", function() {
+                const position = marker.getPosition();
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ location: position }, function(results, status) {
+                    if (status === "OK" && results[0]) {
+                        document.getElementById("location").value = results[0].formatted_address;
+                    }
+                });
+            });
+
+            // Adicionar funcionalidade de autocompletar ao campo de localização
+            const input = document.getElementById("location");
+            const autocomplete = new google.maps.places.Autocomplete(input);
+            autocomplete.bindTo("bounds", map);
+
+            autocomplete.addListener("place_changed", function() {
+                const place = autocomplete.getPlace();
+                if (!place.geometry) return;
+
+                // Atualizar a posição do mapa e do marcador com base no lugar escolhido
+                if (place.geometry.location) {
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(15);
+                    marker.setPosition(place.geometry.location);
+                }
+            });
+        }
+
+        // Submissão do formulário
+        document.getElementById('contactForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            const location = document.getElementById('location').value;
+
+            console.log('Nome:', name);
+            console.log('Telefone:', phone);
+            console.log('E-mail:', email);
+            console.log('Localização:', location);
+
+            document.getElementById('successMessage').style.display = 'block';
+
+            document.getElementById('contactForm').reset();
+        });
+
+        // Carregar o Google Maps
+        function loadScript(src) {
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
+        loadScript(`https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap`);
+    </script>
+
+</body>
+</html>
